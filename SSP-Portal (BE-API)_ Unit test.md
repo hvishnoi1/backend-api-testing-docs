@@ -1,4 +1,4 @@
-# SSP-Portal (BE-API)_ Unit test
+# SSP-Portal (BE-API) Unit test
 
 - [I) Strategy](#strategy)
   - [What to test?](#what-to-test)
@@ -26,28 +26,35 @@
 
 ## Strategy
 
+The testing strategy should inform the project mannagers, developers, testers
+and other people involved. The test strategy should clearly define the
+following:
+
+- **Scope:** What to test, why to test, people involved
+- **Testing environemnt:** Staging, dev, prod tests
+- **Testing tools:** Junit, Mockito
+- **Summary:** Test reports, coverage
+
 ### What to test
 
-We need to ensure that we are covering the piece(s) of code we develop by
-tests. These tests should measure the application’s behaviour and verify
-whether they are expected or not. We need to test each piece of the Model, View
-and Controller (MVC) as well as the implemented logic. This means that we need
-to test data storage/retrieval from the database, ensuring that the connections
-between the views and the models are well-handled at the controller level,
-including the exposed APIs for external uses and the correctness of what the
-users are seeing/interacting within a view. Each of these major components
-requires unit tests, and at each minor layer deeper, tests need to be provided.
+We need to ensure that we are covering the piece(s) of code we develop by tests.
+These tests should measure the application’s behaviour and verify whether they
+are expected or not. We need to test each business layer that we are
+implementing and verify their behaviour. This involves layers such as DAO to be
+verified for storage/retreival from a database, mapper should be verified to map
+rows to DTO objects, service layer to sanitize proper and improper data and rest
+layer to properly parse data and handle errors.
 
 ## Testing Guidelines
 
 ### Principles
 
-- Tests should be fast
-- Tests should be simple
-- Tests should not duplicate implementation logic
-- Tests should be readable
-- Tests should be deterministic
-- Make sure they are a part of the build process
+- Tests should be **fast**
+- Tests should be **simple**
+- Tests should **not duplicate implementation logic**
+- Tests should be **readable**
+- Tests should be **deterministic**
+- Make sure they are a **part of the build process**
 
 ### Practices
 
@@ -58,10 +65,20 @@ requires unit tests, and at each minor layer deeper, tests need to be provided.
 A good, value-adding unit test should encompass even more, meaning the test
 should:
 
-- **Run in memory**, for example, with no DB or file access.
+- Follow consistent **naming convention** like test*Functionality*_*outcome*,
+for example `testCheckValidUser_P`, `testCheckInvalidUser_N`.
+- Clearly define the **expected and actual** testing values using variable names
+prefixed with `expected` or `actual`, for example, `expectedUser` and
+`actualUser`.
+- Be **simple** testing only single functionality at a time.
+- **Run in memory** and has no effect on the existing state providing no DB or
+file access.
 - **Consistently return the same result**.
-- Have **full control for overall tested units**.
+- Have **full control for overall tested units** and should not rely on other
+modules.
 - **Use Mocks or stubs in isolation** when needed.
+- Be **readable**, separate code inside a test into **arrange**, **act** and
+**assert** sections.
 
 > A unit test should be fully automated, fast, readable, maintainable and
 > trustworthy. A unit test is ultimately about catching bugs in the code. A test
@@ -73,7 +90,7 @@ public class UserTest {
 
     // ...
     @Test
-    public void testValidatePassword_P(TestContext context) {
+    public void testValidatePassword_P() {
         UserDTO user = new UserDTO(
             "userId",
             "user@email",
@@ -91,7 +108,10 @@ public class UserTest {
 ```
 
 The example above clearly states the test's intention, parameters are legibly
-defined, and the assertions deliver a well-understandable message.
+defined, and the assertions deliver a well-understandable message. The test name
+follows a defined scheme and the test is devided into 3 parts: initialize the
+required variables (arrange), call the implementations (act) and assertions
+(assert).
 
 ##### Bad practices
 
@@ -109,12 +129,12 @@ also highly problematic.
 ```java
 public class Test {
     @Test
-    public void empty {
+    public void empty() {
         assertNull(null, null);
     }
 
     @Test
-    public void includes {
+    public void includes() {
         Integer userId = 9;
 
         List<Integer> userIds = service.getUserIdByRole(
@@ -125,7 +145,7 @@ public class Test {
     }
 
     @Test
-    public void testAllUsers {
+    public void testAllUsers() {
         List<User> inactiveUsers = service.getUsersByStatus(
             USER_STATUS.INACTIVE.toString()
         );
@@ -228,42 +248,63 @@ input to the test case.
 
 ###### 1) No Data
 
-The tester validates features such as the “Create Flight” function with no data.
+Test the features without data.
 
 ###### 2) Valid Data
 
-The tester validates features such as the “Create Flight” function with valid
-data.
+Test the features with valid data.
 
 ###### 3) Invalid Data
 
-The tester validates features such as the “Create Flight” function with invalid
-data.
+Test the features with invalid data.
 
 ###### 4) Illegal Data Format
 
-The tester validates features such as the “Create Flight” function with illegal
-data.
+Test the features with invalid data format.
+
+Consider the following piece of code to be tested:
+
+```java
+public class UserDTO {
+    
+    private String userId;
+    private String email;
+    private String role;
+    private String status;
+    private String password;
+
+    public UserDTO (String userId, String email, String role, String status) {
+        this.userId = userId;
+        this.email = email;
+        this.role = role;
+        this.status = status;
+    }
+
+    public String setPassword(String password) {
+        this.password = password.hashCode();
+    }
+}
+```
 
 *Example Test Data for 1-4 data set categories:*
 
-| No. | Test Case Data      | No Data | Valid Data       | Invalid/Illegal Data |
-|-----|---------------------|---------|------------------|----------------------|
-| 1   | Campaign budget     |         | 100 CAD          | 0 CAD                |
-| 2   | Campaign Start date |         | Current datetime | Yesterday datetime   |
+| No. | Test Case Data | No Data | Valid Data                                | Invalid/Illegal Data               |
+|-----|----------------|---------|-------------------------------------------|------------------------------------|
+| 1   | `UserDTO`      |         | "1234","user@email","sysadmin","INACTIVE" | 1234,"username","password","admin" |
+| 2   | `setPassword`  |         | "passw0rd"                                | true                               |
 
 ###### 5) Boundary Condition Data Set
 
-Testers determine input values for boundaries that are either inside or outside
-of the given values as data.
+Test for boundaries inside or outside.
 
 *Example Test Data for 5 data set categories:*
 
-| Campaign Start Date Boundaries     | Action |
-|------------------------------------|--------|
-| Today date                         | Pass   |
-| Yesterday date                     | Fail   |
-| Today datetime > Campaign End date | Fail   |
+| Number of records to fetch | Action |
+|----------------------------|--------|
+| 4                          | Pass   |
+| -4                         | Fail   |
+| 4000                       | Fail   |
+| 0                          | Pass   |
 
 ###### 6) Decision Table Data Set
 
