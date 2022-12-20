@@ -3,7 +3,6 @@
 - [I) Strategy](#strategy)
   - [What is Integration Testing?](#what-is-integration-testing)
   - [What to test?](#what-to-test)
-  - [Current State of Integrtion Tests](#current-state-of-integration-tests)
 - [II) Testing Guidelines](#ii-testing-guidelines)
   - [Principles](#principles)
   - [Practices](#practices)
@@ -15,6 +14,15 @@
         - [3. Mocks](#3-mocks)
 
 ## Strategy
+
+The testing strategy should inform the project mannagers, developers, testers
+and other people involved. The test strategy should clearly define the
+following:
+
+- **Scope:** What to test, why to test, people involved
+- **Testing environemnt:** Staging, dev, prod tests
+- **Testing tools:** Junit, Mockito
+- **Summary:** Test reports, coverage
 
 ### What is Integration Testing?
 
@@ -31,19 +39,14 @@ modules we have created will interact with each other properly.
 - Test our interaction with outside code.
 - We want our tests to be valuable. Tests need to be centred around vital
 portions of the code.
+- Test need not mock the behaviour of other modules rather call the actual
+implementations.
 
 > We want to avoid testing all potential scenarios in a desperate attempt to
-> raise our code coverage
-
-### Current State of Integration Tests
-
-- The trader does currently make use of a lot of tests that we consider to be
-Integration tests.
-- Our API/GraphQL tests and Controller tests qualify as Integration tests.
-- Currently, they are mixed into our Unit tests and run at the same time.
-- We want to create a separation between these two types of tests at some point
-but currently, this does not seem to be an issue although isolating our unit
-tests would allow them to run faster.
+> raise our code coverage. Code coverage is not an accurate measure for the
+> quality of tests. Also it should be noted that the code coverge for a module
+> should not be taken into account when testing outside of the module scope for
+> tested module.
 
 ## II) Testing Guidelines
 
@@ -53,29 +56,47 @@ As integration tests cover much more ground, it may not always be obvious as to
 what is causing a failure.
 
 - **Logging:** Thorough logging is the best way to help developers and QA
-identify the source of the issues.
+identify the source of the issues. Usage of logging libraries like `slf4j` and
+`log4j` is recommended. These libraries allow to configure various output
+sources and formats for properly formatting output to make the logs easier to
+investigate and follow.
 
 - **Understand the difference between Integration tests and Unit tests:** Unit
 tests are usually smaller, encapsulated and much simpler. Unit test failures
 should be related to the business logic not being sound. Integration tests on
 the other hand should identify issues between our various modules or when
-communicating to an outside source.
+communicating to an outside source. Examples include calling an API or module.
 
 - **Integration and Unit tests should run separately:** The business logic
 should not be tested in Integration tests, business logic should always be
 tested in the Unit tests. Integration tests are longer to run and therefore
 testing business logic should not be dependent on these lengthy tests. Keeping
 the two test suites separate ensures that we don’t slow down the process for
-Unit tests.
+Unit tests. Ideally the integration tests should be performed after verifying
+the unit tests.
 
 - **Separate Unit tests and Integration tests:** Unit tests need to be able to
 run quickly in order to give developers a quick response to their recent
-changes. If the two test types are not clearly separated testing will be overly time-consuming which risks turning devs away from using unit tests for their
+changes, unlike integration tests which do not simulate the behaviour of an
+implementation (using mocks and stubs) instead call the actual implementation.
+If the two test types are not clearly separated testing will be overly
+time-consuming which risks turning devs away from using unit tests for their
 intended purpose.
 
 - **Tests should be atomic:** In other words, tests should not be dependent on
 previous test results in order to pass. Each test and its results should be
-isolated from other tests.
+isolated from other tests. Use setup/teardown methods to ensure the required
+setup before/after each test case.
+
+- **Tests should not affect actual data:** Since integration tests make use of
+external modules directly instead of relying on mocks or stubs, extra attention
+should be given to tests to check if they are not modifying any existing data.
+For this purpose tests should use an in-memory database or make use of temporary
+files whenever required to make sure that the tests are not interfering with the
+actual data or state. Some examples of tests modifying actual data include:
+  - Creating/modifyng/deleting data from actual database
+  - Changing config files
+  - Changing data in a data store
 
 ### Practices
 
@@ -127,7 +148,8 @@ public class OrderServiceTest {
 "Meszaros uses the term **Test Double** as the generic term for any kind of
 pretend object used in place of a real object for testing purposes. The name
 comes from the notion of a Stunt Double in movies. (One of his aims was to avoid
-using any name that was already widely used.) Meszaros then defined five [particular kinds of double](https://martinfowler.com/bliki/TestDouble.html):
+using any name that was already widely used.) Meszaros then defined five
+[particular kinds of double](https://martinfowler.com/bliki/TestDouble.html):
 
 **Dummy** objects are passed around but never actually used. Usually, they are
 just used to fill parameter lists.
